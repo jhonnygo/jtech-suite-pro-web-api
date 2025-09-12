@@ -24,7 +24,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build
-          cp -a www/. build/
+          cp -a "www/${APP_DIR}/." build/
           if [ -d scripts ]; then cp -a scripts build/; fi
           printf 'APP_DIR=%s\nAPP_URL=%s\n' "$APP_DIR" "$APP_URL" > build/.env
           tar -C build -czf "/tmp/${PKG_BASENAME}" .
