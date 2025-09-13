@@ -1,18 +1,17 @@
-name: Deploy via SSH (stage/prod)
+name: Deploy via SSH (STAGE)
 
 on:
   push:
-    branches: [ develop, main ]
+    branches: [ develop ]
 
 jobs:
   deploy_stage:
-    if: github.ref == 'refs/heads/develop'
     name: Deploy STAGE (bastion-stage → app-stage)
     runs-on: [ self-hosted, bastion-stage ]
     env:
       APP_DIR: api
       APP_URL: https://stage.yotkt.com/
-      APP_HOST: 10.0.1.53     # ← B.3: sustituir por la IP privada real
+      APP_HOST: 10.0.1.212
       REMOTE_USER: deploy
       SSH_KEY_PATH: /home/gha/.ssh/app-stage-deploy
       PKG_BASENAME: api-${{ github.sha }}.tar.gz
@@ -24,29 +23,28 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build
-          cp -a "www/${APP_DIR}/." build/
+          cp -a "www/$APP_DIR/." build/
           if [ -d scripts ]; then cp -a scripts build/; fi
           printf 'APP_DIR=%s\nAPP_URL=%s\n' "$APP_DIR" "$APP_URL" > build/.env
-          tar -C build -czf "/tmp/${PKG_BASENAME}" .
-          ls -lh "/tmp/${PKG_BASENAME}"
+          tar -C build -czf "/tmp/$PKG_BASENAME" .
+          ls -lh "/tmp/$PKG_BASENAME"
 
       - name: Subir paquete a la app (scp)
         run: |
           set -euo pipefail
           scp -o StrictHostKeyChecking=accept-new -i "$SSH_KEY_PATH" \
-            "/tmp/${PKG_BASENAME}" "${REMOTE_USER}@${APP_HOST}:/tmp/"
+            "/tmp/$PKG_BASENAME" "$REMOTE_USER@$APP_HOST:/tmp/"
 
       - name: Desplegar en remoto (flock + copiar + permisos + reload Apache)
         run: |
           set -euo pipefail
           ssh -o StrictHostKeyChecking=accept-new -i "$SSH_KEY_PATH" \
-            "${REMOTE_USER}@${APP_HOST}" "PKG_BASENAME=${PKG_BASENAME} bash -s" <<'EOSH'
+            "$REMOTE_USER@$APP_HOST" "PKG_BASENAME=$PKG_BASENAME bash -s" <<'EOSH'
           set -euo pipefail
           DOCROOT="/var/www/api"
           PKG="/tmp/${PKG_BASENAME}"
           LOCK="${DOCROOT}/.deploy.lock"
 
-          # Ejecuta en exclusión mutua (espera hasta 300s si hay otro deploy)
           flock -w 300 "$LOCK" bash -c '
             set -euo pipefail
             TMPD=$(mktemp -d)
@@ -67,7 +65,7 @@ jobs:
       - name: Health-check (URL pública de stage)
         run: |
           set -euo pipefail
-          URL="${APP_URL%/}/"   # usa la raíz; ajusta a /health si tu API expone endpoint
+          URL="${APP_URL%/}/"
           echo "Health-check: $URL"
           for i in {1..10}; do
             CODE=$(curl -ks -o /dev/null -w '%{http_code}' "$URL" || true)
@@ -79,17 +77,3 @@ jobs:
           done
           echo "ERROR: health-check falló en $URL"
           exit 1
-
-  # NOTA: Prod lo añadiremos en PASO C (cuando tengas bastion-prod y su clave).
-  # deploy_prod:
-  #   if: github.ref == 'refs/heads/main'
-  #   name: Deploy PROD (bastion-prod → app-prod)
-  #   runs-on: [ self-hosted, bastion-prod ]
-  #   env:
-  #     APP_DIR: api
-  #     APP_URL: https://yotkt.com/
-  #     APP_HOST: APP_PROD_HOST_PLACEHOLDER
-  #     REMOTE_USER: deploy
-  #     SSH_KEY_PATH: /home/gha/.ssh/app-prod-deploy
-  #     PKG_BASENAME: api-${{ github.sha }}.tar.gz
-  #   steps: [ ... igual que stage, cambiando host/clave ... ]
