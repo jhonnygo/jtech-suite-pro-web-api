@@ -1,0 +1,82 @@
+*********************************************
+Creamos la key de despliegue app-stage-deploy
+*********************************************
+Entra al bastion-stage
+----------------------
+#> ssh bastion-stage
+
+Cambiar al usuario 'gha'
+------------------------
+#> sudo -iu gha
+
+Crear carpeta .ssh
+------------------
+#> mkdir -p ~/.ssh
+#> chmod 700 ~/.ssh
+
+Generar una clave para este acceso
+----------------------------------
+#> ssh-keygen -t ed25519 -N "" -C "gha@app-stage-deploy" -f ~/.ssh/app-stage-deploy
+
+Verifica y muestra la PÚBLICA
+-----------------------------
+#> ls -l ~/.ssh/app-stage-deploy*
+#> cat ~/.ssh/app-stage-deploy.pub
+
+Copio la linea publica que sera del tipo y que viene del comando anterior
+-------------------------------------------------------------------------
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBmYRCRcXx6yMheR7DqsuSozKuOIDozDuyuGBv5KkOUA gha@app-stage-deploy
+
+
+***********************************************
+Entra a app-stage y autoriza la clave en deploy
+***********************************************
+#> ssh app-stage
+
+Creo el usuario deploy
+----------------------
+#> sudo adduser --disabled-password --gecos "" deploy
+#> sudo usermod -aG www-data deploy
+#> sudo passwd -l deploy || true
+#> sudo install -d -m 700 -o deploy -g deploy /home/deploy/.ssh
+#> sudo install -m 600 -o deploy -g deploy /dev/null /home/deploy/.ssh/authorized_keys
+
+Sudoers mínimo
+--------------
+#> sudo bash -c 'cat >/etc/sudoers.d/99-deploy-apache << "EOF"
+Cmnd_Alias APACHE_CMDS = /bin/systemctl reload apache2, /bin/systemctl restart apache2, /usr/bin/systemctl reload apache2, /usr/bin/systemctl restart apache2
+deploy ALL=(root) NOPASSWD: APACHE_CMDS
+EOF'
+#> sudo chmod 440 /etc/sudoers.d/99-deploy-apache
+#> sudo visudo -cf /etc/sudoers
+
+Docroot de la API y permisos
+----------------------------
+#> sudo install -d -m 2775 -o deploy -g www-data /var/www/api
+#> sudo chown -R deploy:www-data /var/www/api
+#> sudo find /var/www/api -type d -exec chmod 2775 {} \;
+#> sudo find /var/www/api -type f -exec chmod 664 {} \;
+
+Umask colaborativa para deploy (archivos grupo-escribibles)
+-----------------------------------------------------------
+#> echo 'umask 002' | sudo tee -a /home/deploy/.profile >/dev/null
+#> echo 'umask 002' | sudo tee -a /home/deploy/.bashrc   >/dev/null
+
+Asegura .ssh de deploy y añade la clave pública
+-----------------------------------------------
+#> sudo install -d -m 700 -o deploy -g deploy /home/deploy/.ssh
+#> sudo install -m 600 -o deploy -g deploy /home/deploy/.ssh/authorized_keys
+
+PEGA aquí tu línea pública copiada en un paso anterior
+------------------------------------------------------
+#> echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBmYRCRcXx6yMheR7DqsuSozKuOIDozDuyuGBv5KkOUA gha@app-stage-deploy' | sudo tee -a /home/deploy/.ssh/authorized_keys >/dev/null
+
+Verificaciones rápidas
+----------------------
+#> id deploy
+#> sudo -l -U deploy
+#> ls -ld /var/www/api
+
+Hacer un push vacio de prueba (Opcional)
+#> git commit --allow-empty -m "test: Probando despliegue en stage 001"
+#> git push -u origin develop
