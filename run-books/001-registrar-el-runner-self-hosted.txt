@@ -1,0 +1,67 @@
+REPO
+=======================
+jtech-suite-pro-web-api
+Jtech suite pro web api
+https://github.com/jhonnygo/jtech-suite-pro-web-api
+
+
+REGISTRAR RUNNER
+Entro en mi bastion desde WSL
+siendo bastion-stage donde creare el runner
+#> ssh bastion-stage
+
+Crear usuario 'gha' si no existe
+#> sudo adduser --disabled-password --gecos "" gha
+
+Dependencias mínimas para el runner
+#> sudo apt-get update -y
+#> sudo apt-get install -y curl tar gzip ca-certificates git
+
+Cambiar a la cuenta 'gha'
+#> sudo -iu gha
+
+Crear y entrar en la carpeta del runner
+#> mkdir actions-runner && cd actions-runner
+
+Descargo el ultimo paquete del runner
+#> curl -o actions-runner-linux-x64-2.328.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.328.0/actions-runner-linux-x64-2.328.0.tar.gz
+
+Extraigo el paquete
+#> tar xzf ./actions-runner-linux-x64-2.328.0.tar.gz
+
+Configuro el runner -> Opciones:
+
+OPCION 1 - Manual desde terminal
+--------
+
+#> ./config.sh --url https://github.com/jhonnygo/jtech-suite-pro-web-api --token AJFHNET4AJXMCV6HKDQN673IYOYYS
+
+
+Usar los siguientes datos:
+  *- <enter>
+  *- bastion-stage
+  *- bastion-stage,self-hosted
+  *- <enter>
+
+#> ./run.sh
+
+OPCION 2 - Mas para script
+--------
+
+./config.sh \
+  --url https://github.com/jhonnygo/jtech-suite-pro-web-api \
+  --token AJFHNEXIAYXXXIQCXTSJPI3IYP2FQ \
+  --name bastion-stage \
+  --labels "self-hosted,bastion-stage" \
+  --unattended
+
+Instala y arranca el servicio
+#> exit && sudo su
+#> chown -R gha:gha /home/gha/actions-runner
+#> cd /home/gha/actions-runner
+#> ./svc.sh install gha
+#> ./svc.sh start
+#> systemctl is-active "actions.runner."* && echo "Runner activo"
+
+
+

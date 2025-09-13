@@ -1,0 +1,29 @@
+name: Ping GitHub-hosted
+
+on:
+  push:
+    branches: [ test ]
+
+jobs:
+  ping-gh:
+    name: Ping ubuntu-latest
+    runs-on: ubuntu-latest   # <- GitHub-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Info del runner GH-hosted
+        run: |
+          echo "Actor........: $GITHUB_ACTOR"
+          echo "Repo.........: $GITHUB_REPOSITORY"
+          echo "Ref..........: $GITHUB_REF"
+          echo "Runner name..: $RUNNER_NAME"
+          echo "Runner OS....: $RUNNER_OS"
+          echo "Runner Arch..: $RUNNER_ARCH"
+          echo "Workspace....: $GITHUB_WORKSPACE"
+          uname -a
+          whoami
+          hostname
+          id
+          which ssh || true
+          ssh -V || true
