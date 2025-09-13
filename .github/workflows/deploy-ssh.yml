@@ -12,7 +12,7 @@ jobs:
     env:
       APP_DIR: api
       APP_URL: https://stage.yotkt.com/
-      APP_HOST: 10.0.1.61     # ← B.3: sustituir por la IP privada real
+      APP_HOST: 10.0.1.138     # ← B.3: sustituir por la IP privada real
       REMOTE_USER: deploy
       SSH_KEY_PATH: /home/gha/.ssh/app-stage-deploy
       PKG_BASENAME: api-${{ github.sha }}.tar.gz

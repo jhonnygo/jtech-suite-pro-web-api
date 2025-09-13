@@ -44,7 +44,7 @@
 </head>
 <body>
 
-    <h1>Consulta de Usuarios (MySQL remoto) - 020</h1>
+    <h1>Consulta de Usuarios (MySQL remoto) - 021</h1>
 
     <footer>
         &copy; <?php echo date("Y"); ?> JTech Suite Pro - Módulo MySQL - Stage
