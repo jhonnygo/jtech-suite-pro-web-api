@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 # Instala y registra un self-hosted runner en el bastion
-# Requiere: alias SSH "bastion-stage" en ~/.ssh/config funcionando.
+# Requiere: alias SSH "bastion-prod" en ~/.ssh/config funcionando.
 # Vars necesarias: REPO_URL, RUNNER_TOKEN
 # Vars opcionales: RUNNER_NAME, LABELS, VERSION, SSH_TARGET
 
 # Ejemplo de uso:
 #
-# RUNNER_TOKEN='mi-token' SSH_TARGET='bastion-stage' ./01-register-gh-runner.sh
+# RUNNER_TOKEN='mi-token' SSH_TARGET='bastion-prod' ./01-register-gh-runner-prod.sh
 
 set -euo pipefail
 
 : "${RUNNER_TOKEN:?Falta RUNNER_TOKEN (registration token de GitHub)}"
 
-SSH_TARGET="${SSH_TARGET:-bastion-stage}"
-RUNNER_NAME="${RUNNER_NAME:-bastion-stage-$(date +%Y%m%d-%H%M)}"
-LABELS="${LABELS:-self-hosted,bastion-stage}"
+SSH_TARGET="${SSH_TARGET:-bastion-prod}"
+RUNNER_NAME="${RUNNER_NAME:-bastion-prod-$(date +%Y%m%d-%H%M)}"
+LABELS="${LABELS:-self-hosted,bastion-prod}"
 VERSION="${VERSION:-2.328.0}"   # Version del paquete de runner en GitHub
 REPO_URL="https://github.com/jhonnygo/jtech-suite-pro-web-api"
 

@@ -1,3 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ===== Parámetros (con defaults) =====
+# Usamos tu APP_STAGE_IP si está exportada (p.ej. APP_STAGE_IP=10.0.1.212).
+APP_DIR="${APP_DIR:-api}"
+RUNNER_LABEL="${RUNNER_LABEL:-bastion-stage}"
+APP_URL_STAGE="${APP_URL_STAGE:-https://stage.yotkt.com/}"
+APP_HOST_STAGE="${APP_HOST_STAGE:-${APP_STAGE_IP:-APP_STAGE_HOST_PLACEHOLDER}}"
+REMOTE_USER="${REMOTE_USER:-deploy}"
+SSH_KEY_PATH="${SSH_KEY_PATH:-/home/gha/.ssh/app-deploy}"
+
+WF=".github/workflows/deploy-workflow-api-stage.yml"
+mkdir -p .github/workflows
+
+# Plantilla con placeholders (no se expanden aquí)
+cat > "$WF" <<'YAML'
 name: Deploy via SSH (STAGE)
 
 on:
@@ -7,13 +24,13 @@ on:
 jobs:
   deploy_stage:
     name: Deploy STAGE (bastion-stage → app-stage)
-    runs-on: [ self-hosted, bastion-stage ]
+    runs-on: [ self-hosted, RUNNER_LABEL_PLACEHOLDER ]
     env:
-      APP_DIR: api
-      APP_URL: https://stage.yotkt.com/
-      APP_HOST: 10.0.1.116
-      REMOTE_USER: deploy
-      SSH_KEY_PATH: /home/gha/.ssh/app-stage-deploy
+      APP_DIR: APP_DIR_PLACEHOLDER
+      APP_URL: APP_URL_STAGE_PLACEHOLDER
+      APP_HOST: APP_HOST_STAGE_PLACEHOLDER
+      REMOTE_USER: REMOTE_USER_PLACEHOLDER
+      SSH_KEY_PATH: SSH_KEY_PATH_PLACEHOLDER
       PKG_BASENAME: api-${{ github.sha }}.tar.gz
     steps:
       - name: Checkout
@@ -41,7 +58,7 @@ jobs:
           ssh -o StrictHostKeyChecking=accept-new -i "$SSH_KEY_PATH" \
             "$REMOTE_USER@$APP_HOST" "PKG_BASENAME=$PKG_BASENAME bash -s" <<'EOSH'
           set -euo pipefail
-          DOCROOT="/var/www/api"
+          DOCROOT="/var/www/APP_DIR_PLACEHOLDER"
           PKG="/tmp/${PKG_BASENAME}"
           LOCK="${DOCROOT}/.deploy.lock"
 
@@ -77,3 +94,22 @@ jobs:
           done
           echo "ERROR: health-check falló en $URL"
           exit 1
+YAML
+
+# Sustituimos placeholders por los valores (APP_HOST_STAGE usa APP_STAGE_IP si estaba exportada)
+sed -i \
+  -e "s|RUNNER_LABEL_PLACEHOLDER|${RUNNER_LABEL}|g" \
+  -e "s|APP_DIR_PLACEHOLDER|${APP_DIR}|g" \
+  -e "s|APP_URL_STAGE_PLACEHOLDER|${APP_URL_STAGE}|g" \
+  -e "s|APP_HOST_STAGE_PLACEHOLDER|${APP_HOST_STAGE}|g" \
+  -e "s|REMOTE_USER_PLACEHOLDER|${REMOTE_USER}|g" \
+  -e "s|SSH_KEY_PATH_PLACEHOLDER|${SSH_KEY_PATH}|g" \
+  "$WF"
+
+echo "[OK] Generado $WF con:"
+echo "     - Runner label : ${RUNNER_LABEL}"
+echo "     - APP_DIR      : ${APP_DIR}"
+echo "     - APP_URL      : ${APP_URL_STAGE}"
+echo "     - APP_HOST     : ${APP_HOST_STAGE}"
+echo "     - REMOTE_USER  : ${REMOTE_USER}"
+echo "     - SSH_KEY_PATH : ${SSH_KEY_PATH}"

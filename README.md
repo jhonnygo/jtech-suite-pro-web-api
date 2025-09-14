@@ -78,6 +78,7 @@ Host db-stage
 ```bash
 export RUNNER_TOKEN="AQUI_TU_TOKEN_DEL_RUNNER"
 export APP_STAGE_IP="10.0.1.212"   # IP privada de la app-stage
+export APP_PROD_IP="10.0.2.200"   # IP privada de la app-prod
 ```
 
 ---
@@ -94,11 +95,15 @@ export APP_STAGE_IP="10.0.1.212"   # IP privada de la app-stage
 ./scripts/02-setup-deploy-access-stage.sh
 
 # 3) Generar el workflow de stage (solo escribe el YAML en tu repo local)
-./scripts/03-generate-workflow-stage.sh
+./scripts/03-generate-workflow-api-stage.sh
+
+# 4) Generar el workflow de prod (solo escribe el YAML en tu repo local)
+./scripts/04-generate-workflow-api-prod.sh
 ```
 
 > 📄 El workflow se genera en:  
-> `.github/workflows/deploy-workflow-stage.yml`
+> `.github/workflows/deploy-workflow-api-stage.yml`
+> `.github/workflows/deploy-workflow-api-prod.yml`
 
 ---
 
@@ -114,6 +119,12 @@ git add .
 git commit -m "test: trigger deploy stage"
 git push -u origin develop
 ```
+
+En **Actions** verás el job **Deploy STAGE** ejecutándose en `[self-hosted, bastion-stage]`.
+
+---
+
+**Probar pipeline (branch `main`) haciendo un PULL REQUEST**
 
 En **Actions** verás el job **Deploy STAGE** ejecutándose en `[self-hosted, bastion-stage]`.
 
