@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
-# Prepara el acceso de deploy para stage funcionando todo como root en remoto.
+# Prepara el acceso de deploy para prod funcionando todo como root en remoto.
 
 set -euo pipefail
 
 # --- Defaults locales ---
-SSH_BASTION="${SSH_BASTION:-bastion-stage}"
-SSH_APP="${SSH_APP:-app-stage}"
+SSH_BASTION="${SSH_BASTION:-bastion-prod}"
+SSH_APP="${SSH_APP:-app-prod}"
 DEPLOY_USER="${DEPLOY_USER:-deploy}"
-KEY_NAME="${KEY_NAME:-app-stage-deploy}"
+KEY_NAME="${KEY_NAME:-app-deploy}"
 DOCROOT="${DOCROOT:-/var/www/api}"
 APACHE_SUDOERS="${APACHE_SUDOERS:-/etc/sudoers.d/99-deploy-apache}"
-APP_STAGE_IP="${APP_STAGE_IP:-}"   # opcional (para sembrar known_hosts)
+APP_PROD_IP="${APP_PROD_IP:-}"   # opcional (para sembrar known_hosts)
 
 echo "[1/4] Reset ~/.ssh en bastion (${SSH_BASTION}) y generación de clave nueva (${KEY_NAME})"
-ssh "${SSH_BASTION}" "KEY_NAME='${KEY_NAME}' APP_STAGE_IP='${APP_STAGE_IP}' sudo -s bash -s" <<'BASTION_ROOT'
+ssh "${SSH_BASTION}" "KEY_NAME='${KEY_NAME}' APP_PROD_IP='${APP_PROD_IP}' sudo -s bash -s" <<'BASTION_ROOT'
 set -euo pipefail
-: "${KEY_NAME:=app-stage-deploy}"
-: "${APP_STAGE_IP:=}"
+: "${KEY_NAME:=app-deploy}"
+: "${APP_PROD_IP:=}"
 
 # Asegurar usuario gha
 id -u gha >/dev/null 2>&1 || adduser --disabled-password --gecos "" gha
@@ -29,8 +29,8 @@ install -d -m 700 -o gha -g gha /home/gha/.ssh
 su -s /bin/bash -c "ssh-keygen -q -t ed25519 -N '' -C 'gha@${KEY_NAME}' -f /home/gha/.ssh/${KEY_NAME}" gha
 
 # (Opcional) known_hosts para la IP privada de la app
-if [ -n "${APP_STAGE_IP}" ]; then
-  su -s /bin/bash -c "ssh-keyscan -H ${APP_STAGE_IP} >> /home/gha/.ssh/known_hosts && chmod 600 /home/gha/.ssh/known_hosts" gha
+if [ -n "${APP_PROD_IP}" ]; then
+  su -s /bin/bash -c "ssh-keyscan -H ${APP_PROD_IP} >> /home/gha/.ssh/known_hosts && chmod 600 /home/gha/.ssh/known_hosts" gha
 fi
 
 chmod 600 /home/gha/.ssh/${KEY_NAME} /home/gha/.ssh/${KEY_NAME}.pub
@@ -91,7 +91,7 @@ grep -q '^umask 002' "/home/\$DEPLOY_USER/.bashrc"   2>/dev/null || echo 'umask 
 echo "[OK] \$DEPLOY_USER listo y clave autorizada"
 APP_ROOT
 
-# (4/4) (ya sembrado en paso 1 si pasaste APP_STAGE_IP)
-[ -n "${APP_STAGE_IP}" ] && echo "[4/4] known_hosts se sembró en paso 1" || echo "[4/4] (opcional) APP_STAGE_IP no definido; me salto known_hosts"
+# (4/4) (ya sembrado en paso 1 si pasaste APP_PROD_IP)
+[ -n "${APP_PROD_IP}" ] && echo "[4/4] known_hosts se sembró en paso 1" || echo "[4/4] (opcional) APP_PROD_IP no definido; me salto known_hosts"
 
-echo "[DONE] Acceso gha(bastion) → ${DEPLOY_USER}(app-stage) listo."
+echo "[DONE] Acceso gha(bastion) → ${DEPLOY_USER}(app-prod) listo."
