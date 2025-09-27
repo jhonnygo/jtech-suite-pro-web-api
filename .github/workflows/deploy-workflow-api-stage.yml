@@ -11,7 +11,7 @@ jobs:
     env:
       APP_DIR: api
       APP_URL: https://stage.yotkt.com/
-      APP_HOST: 10.0.1.48
+      APP_HOST: 10.0.1.59
       REMOTE_USER: deploy
       SSH_KEY_PATH: /home/gha/.ssh/app-deploy
       PKG_BASENAME: api-${{ github.sha }}.tar.gz
